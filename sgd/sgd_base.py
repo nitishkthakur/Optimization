@@ -65,9 +65,9 @@ class SGDBase:
 
     def log_history(self):
         self.history['iteration'].append(self.iterations)
-        self.history['loss'].append(self.loss(self.params))
-        self.history['params'].append(self.params)
-        self.history['grads'].append(self.grads)
+        self.history['loss'].append(float(self.loss(self.params)))
+        self.history['params'].append(self.params.copy())
+        self.history['grads'].append(self.grads.copy())
         logger.info(f"History logged for iteration {self.iterations}.")
 
     def plot_loss_vs_iterations(self, figsize=(8, 5)):
@@ -199,18 +199,18 @@ class SGDMomentum(SGDBase):
     
     def log_history(self):
         self.history['iteration'].append(self.iterations)
-        self.history['loss'].append(self.loss(self.params))
+        self.history['loss'].append(float(self.loss(self.params)))
         self.history['params'].append(self.params.copy())
         self.history['grads'].append(self.grads.copy())
         self.history['velocity'].append(self.velocity.copy())
         logger.info(f"History logged for iteration {self.iterations}.")
 
-    
-
-    
-    
 
 
-        
+
+
+
+
+
 
 

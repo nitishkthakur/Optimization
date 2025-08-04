@@ -3,15 +3,15 @@ import plotly.io as pio
 import webbrowser
 import tempfile
 import os
+import numpy as np
 
 def plot_training_metrics(metrics_dict, display_mode='inline', html_path=None):
     """
     Plot training metrics with a dropdown to select which metric to display.
 
     This function visualizes training metrics (such as loss, accuracy, etc.) over iterations.
-    The input is a dictionary with at least an 'iteration' key (list of iteration numbers) and
-    one or more other keys representing metric names (each mapping to a list of values).
-    The plot uses Plotly and provides a dropdown to select which metric to display on the y-axis.
+    For scalar metrics, it shows line plots. For vector metrics (params, velocity, grads),
+    it creates hexbin plots showing the distribution of values across iterations.
 
     Args:
         metrics_dict (dict):
@@ -33,55 +33,125 @@ def plot_training_metrics(metrics_dict, display_mode='inline', html_path=None):
                     or if html_path is not provided when display_mode is 'file'.
 
     Example:
-        metrics = {
-            'iteration': [1, 2, 3, 4],
-            'loss': [0.9, 0.7, 0.5, 0.3],
-            'accuracy': [0.5, 0.6, 0.7, 0.8]
-        }
-        plot_training_metrics(metrics, display_mode='inline')
+        # From SGD class
+        sgd = SGDMomentum()
+        # ... after training ...
+        plot_training_metrics(sgd.history, display_mode='inline')
     """
     if 'iteration' not in metrics_dict:
         raise ValueError("metrics_dict must contain an 'iteration' key.")
 
-    x = metrics_dict['iteration']
-    metric_keys = [k for k in metrics_dict.keys() if k != 'iteration']
+    # Convert to lists to ensure Plotly compatibility
+    x = list(metrics_dict['iteration'])
+    
+    # Separate scalar and vector metrics
+    scalar_keys = []
+    vector_keys = []
+    
+    for k in metrics_dict.keys():
+        if k == 'iteration':
+            continue
+        
+        data = metrics_dict[k]
+        if len(data) > 0:
+            # Check if this is a list of arrays/vectors
+            first_item = data[0]
+            if hasattr(first_item, '__len__') and not isinstance(first_item, (str, int, float)):
+                vector_keys.append(k)
+            else:
+                scalar_keys.append(k)
 
-    if not metric_keys:
-        raise ValueError("metrics_dict must contain at least one metric key besides 'iteration'.")
+    all_keys = scalar_keys + vector_keys
+    if not all_keys:
+        raise ValueError("metrics_dict must contain at least one plottable metric key besides 'iteration'.")
 
-    # Create traces for each metric, only first is visible
+    # Create traces for each metric
     traces = []
-    for i, key in enumerate(metric_keys):
+    
+    # Add scalar metrics as line plots
+    for i, key in enumerate(scalar_keys):
+        y_data = metrics_dict[key]
+        # Convert numpy arrays to lists for Plotly compatibility
+        if hasattr(y_data, 'tolist'):
+            y_data = y_data.tolist()
+        elif hasattr(y_data, '__iter__'):
+            y_data = [float(val) if hasattr(val, 'item') else val for val in y_data]
+        
         traces.append(go.Scatter(
             x=x,
-            y=metrics_dict[key],
+            y=y_data,
             mode='lines+markers',
             name=key,
-            visible=(i == 0)
+            visible=True if i == 0 else False
+        ))
+    
+    # Add vector metrics as hexbin plots
+    for i, key in enumerate(vector_keys):
+        vector_data = metrics_dict[key]
+        
+        # Flatten all vectors and create corresponding iteration indices
+        all_values = []
+        all_iterations = []
+        
+        for iter_idx, vec in enumerate(vector_data):
+            if hasattr(vec, 'flatten'):
+                flat_vec = vec.flatten()
+            else:
+                flat_vec = np.array(vec).flatten()
+            
+            all_values.extend(flat_vec)
+            all_iterations.extend([x[iter_idx]] * len(flat_vec))
+        
+        traces.append(go.Histogram2d(
+            x=all_iterations,
+            y=all_values,
+            name=f'{key} (hexbin)',
+            colorscale='RdBu',
+            zmid=0,
+            xbins=dict(start=min(x)-0.5, end=max(x)+0.5, size=1),
+            visible=True if len(scalar_keys) == 0 and i == 0 else False
         ))
 
     # Dropdown buttons for each metric
     buttons = []
-    for i, key in enumerate(metric_keys):
-        visible = [False] * len(metric_keys)
-        visible[i] = True
+    trace_idx = 0
+    
+    for key in scalar_keys:
+        visible = [False] * len(traces)
+        visible[trace_idx] = True
         buttons.append(dict(
             label=key,
             method='update',
             args=[{'visible': visible},
                   {'yaxis': {'title': key}}]
         ))
+        trace_idx += 1
+    
+    for key in vector_keys:
+        visible = [False] * len(traces)
+        visible[trace_idx] = True
+        buttons.append(dict(
+            label=f'{key} (hexbin)',
+            method='update',
+            args=[{'visible': visible},
+                  {'yaxis': {'title': f'{key} values'}}]
+        ))
+        trace_idx += 1
 
     layout = go.Layout(
         title='Training Metrics',
         xaxis=dict(title='Iteration'),
-        yaxis=dict(title=metric_keys[0]),
+        yaxis=dict(title=all_keys[0] if all_keys else 'Value'),
         updatemenus=[dict(
             active=0,
             buttons=buttons,
-            x=1.15,
-            y=1.15
-        )]
+            direction="down",
+            showactive=True,
+            x=1.02,
+            xanchor="left",
+            y=1.02,
+            yanchor="top"
+        )] if len(buttons) > 0 else []
     )
 
     fig = go.Figure(data=traces, layout=layout)
