@@ -161,10 +161,10 @@ class SGDLineSearch(SGDBase):
     
 
 class SGDMomentum(SGDBase):
-    def __init__(self, learning_rate = 0.1, record_history = True, momentum=0.9):
+    def __init__(self, learning_rate = 0.1, record_history = True, momentum=0.9, velocity=0.0):
         super().__init__(learning_rate, record_history)
         self.momentum = momentum
-        self.velocity = None  # Initialize velocity
+        self.velocity = velocity  # Initialize velocity
         logger.info(f"SGDMomentum initialized with learning_rate={learning_rate}, momentum={momentum}")
 
     def step(self, params=None, loss=None, grads=None):
@@ -182,5 +182,33 @@ class SGDMomentum(SGDBase):
             grads = approx_fprime(self.params, self.loss, epsilon=1e-8)
         
         self.grads = grads
+    
+        # Initialize velocity if not already done
+        self.velocity = self.momentum*self.velocity - self.learning_rate * self.grads
+        self.params = self.params + self.velocity
+        self.iterations += 1
+
+        if self.record_history:
+            logger.info("Logging current iteration to history.")
+            self.log_history()
+
+        logger.info(f"SGDMomentum step {self.iterations} complete. Returning updated parameters.")
+        return self.params
+    
+    def log_history(self):
+        self.history['iteration'].append(self.iterations)
+        self.history['loss'].append(self.loss(self.params))
+        self.history['params'].append(self.params.copy())
+        self.history['grads'].append(self.grads.copy())
+        self.history['velocity'].append(self.velocity.copy())
+        logger.info(f"History logged for iteration {self.iterations}.")
+
+    
+
+    
+    
+
 
         
+
+
