@@ -165,6 +165,8 @@ class SGDMomentum(SGDBase):
         super().__init__(learning_rate, record_history)
         self.momentum = momentum
         self.velocity = velocity  # Initialize velocity
+        self.history['velocity'] = []  # Add velocity to history
+        self.history['grads'] = []
         logger.info(f"SGDMomentum initialized with learning_rate={learning_rate}, momentum={momentum}")
 
     def step(self, params=None, loss=None, grads=None):
@@ -173,7 +175,7 @@ class SGDMomentum(SGDBase):
             params = self.params
         else:
             self.params = params
-
+        self.loss = loss
         if grads is None:
             if self.loss is None:
                 logger.error("Either loss or grads must be provided.")
