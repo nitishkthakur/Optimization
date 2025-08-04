@@ -9,6 +9,17 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
 build/
 develop-eggs/
 dist/
@@ -23,6 +34,98 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+debug.log
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# mypy
+.mypy_cache/
+.dmypy.json
+
+# VS Code
+.vscode/
+
+# Mac
+.DS_Store
+
+# Linux
+*~
+
+# Logs
+*.log
+
+# Local env
+.venv/
+venv/
+ENV/
+
+# Ignore data files
+*.csv
+*.tsv
+*.dat
+*.db
+*.sqlite
+
+# Ignore model files
+*.h5
+*.hdf5
+*.pkl
+*.joblib
+*.pt
+*.onnx
+
+# Ignore images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+
+# Ignore PDFs
+*.pdf
+
+# Ignore temporary files
+*.tmp
+*.temp
+
+# Ignore backup files
+*.bak
+*.old
+*.orig
+
+# Ignore test outputs
+*.out
+*.err
+
+# Ignore wheel files
+*.whl
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
