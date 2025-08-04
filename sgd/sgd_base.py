@@ -158,3 +158,29 @@ class SGDLineSearch(SGDBase):
 
         logger.info(f"Line search step {self.iterations} complete. Returning updated parameters.")
         return self.params
+    
+
+class SGDMomentum(SGDBase):
+    def __init__(self, learning_rate = 0.1, record_history = True, momentum=0.9):
+        super().__init__(learning_rate, record_history)
+        self.momentum = momentum
+        self.velocity = None  # Initialize velocity
+        logger.info(f"SGDMomentum initialized with learning_rate={learning_rate}, momentum={momentum}")
+
+    def step(self, params=None, loss=None, grads=None):
+        logger.info(f"Starting SGDMomentum step {self.iterations + 1}")
+        if params is None:
+            params = self.params
+        else:
+            self.params = params
+
+        if grads is None:
+            if self.loss is None:
+                logger.error("Either loss or grads must be provided.")
+                raise ValueError("Either loss or grads must be provided.")
+            logger.info("Calculating gradients using finite difference method.")
+            grads = approx_fprime(self.params, self.loss, epsilon=1e-8)
+        
+        self.grads = grads
+
+        
