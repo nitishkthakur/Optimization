@@ -106,6 +106,21 @@ class SGDLineSearch(SGDBase):
         logger.info("SGDLineSearch initialized.")
 
     def step(self, params=None, loss=None, grads=None):
+        """
+        Performs a single optimization step using line search.
+
+        Parameters:
+            params (np.ndarray, optional): Current parameter values. If None, uses self.params.
+            loss (callable, optional): Loss function to minimize. Required if grads is not provided.
+            grads (np.ndarray, optional): Gradient of the loss at params. If None, computed via finite differences.
+
+        Returns:
+            np.ndarray: Updated parameter values after the step.
+
+        The update rule is:
+            params_new = params - alpha_opt * grads
+        where alpha_opt is found by minimizing phi(alpha) = loss(params - alpha * grads) using line search.
+        """
         logger.info("Starting line search step.")
         self.loss = loss
         if params is None:
