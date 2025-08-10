@@ -208,6 +208,52 @@ class SGDMomentum(SGDBase):
 
 
 
+class SGDNesterovMomentum(SGDBase):
+    def __init__(self, learning_rate = 0.1, record_history = True, momentum=0.9, velocity=0.0):
+        super().__init__(learning_rate, record_history)
+        self.momentum = momentum
+        self.velocity = velocity  # Initialize velocity
+        self.history['velocity'] = []  # Add velocity to history
+        self.history['grads'] = []
+        logger.info(f"SGDMomentum initialized with learning_rate={learning_rate}, momentum={momentum}")
+
+    def step(self, params=None, loss=None, grads=None):
+        logger.info(f"Starting SGDMomentum step {self.iterations + 1}")
+        if params is None:
+            params = self.params
+        else:
+            self.params = params
+        self.loss = loss
+        if grads is None:
+            if self.loss is None:
+                logger.error("Either loss or grads must be provided.")
+                raise ValueError("Either loss or grads must be provided.")
+            logger.info("Calculating gradients using finite difference method.")
+
+            # Since this is nesterovs method, we need to calculate the gradient at the "lookahead" position
+            grads = approx_fprime(self.params + self.momentum*self.velocity, self.loss, epsilon=1e-8)
+        
+        self.grads = grads
+    
+        # Initialize velocity if not already done
+        self.velocity = self.momentum*self.velocity - self.learning_rate * self.grads
+        self.params = self.params + self.velocity
+        self.iterations += 1
+
+        if self.record_history:
+            logger.info("Logging current iteration to history.")
+            self.log_history()
+
+        logger.info(f"SGDMomentum step {self.iterations} complete. Returning updated parameters.")
+        return self.params
+    
+    def log_history(self):
+        self.history['iteration'].append(self.iterations)
+        self.history['loss'].append(float(self.loss(self.params)))
+        self.history['params'].append(self.params.copy())
+        self.history['grads'].append(self.grads.copy())
+        self.history['velocity'].append(self.velocity.copy())
+        logger.info(f"History logged for iteration {self.iterations}.")
 
 
 
